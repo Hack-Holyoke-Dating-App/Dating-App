@@ -63,9 +63,7 @@ class TextAnalysis:
 
         if user_a_categories is not None:
             # Add new categories
-            for category in user_a_categories:
-                name = category.name
-
+            for name in user_a_categories:
                 if name not in user_a_topics.topics:
                     user_a_topics.topics.append(name)
 
@@ -78,9 +76,7 @@ class TextAnalysis:
 
         if user_b_categories is not None:
             # Add new categories
-            for category in user_b_categories:
-                name = category.name
-
+            for name in user_b_categories:
                 if name not in user_b_topics.topics:
                     user_b_topics.topics.append(name)
 
@@ -100,6 +96,15 @@ class TextAnalysis:
 
     def make_categories_call(self, document):
         try:
-            return self.client.classify_text(document).categories
+            names = []
+            categories = self.client.classify_text(document).categories
+            for category in categories:
+                name = category.name
+                name = name[1:]
+                name = name.replace('/', ' -> ')
+
+                names.append(name)
+
+            return names
         except Exception as e:
             return None
