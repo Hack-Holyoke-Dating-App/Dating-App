@@ -8,11 +8,15 @@ class User:
         self.location = location
         
     def to_dict(self):
-        return {
-                '_id' : self.id,
+        d = {
                 'username' : self.username,
                 'name': self.name,
                 'profile_picture_path' : self.profile_picture_path,
                 'age' : self.age,
                 'location' : self.location
                 }
+        
+        if (self.id) :
+            d['_id'] = self.id
+            
+        return d

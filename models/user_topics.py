@@ -6,9 +6,12 @@ class User_Topic:
         self.frequency = frequency
         
     def to_dict(self):
-        return {
-                '_id' : self.id,
-                'user_id' : self.user_id,
+        d = {
                 'topic' : self.topic,
                 'frequency' : self.frequency
                 }
+        
+        if (self.id):
+            d['_id'] = self.id
+            
+        return d
