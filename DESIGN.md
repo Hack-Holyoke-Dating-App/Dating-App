@@ -72,6 +72,8 @@ Collection: `user_topics`
 ### Create User
 POST `/api/users`
 
+Status: Written
+
 Request:
 
 - `user`: User to create
