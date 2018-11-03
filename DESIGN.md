@@ -98,7 +98,7 @@ Response:
 
 ## Match Endpoints
 ### Get Matches
-GET `/api/users/matches/<user id>`
+GET `/api/users/<user id>/matches`
 
 Request: None
 
