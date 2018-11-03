@@ -17,6 +17,14 @@ class ConversationAnalysis:
                                     text_to_analyse_a=doc['text_to_analyse_a'],
                                     text_to_analyse_b=doc['text_to_analyse_b'])
 
+    """
+    def get_avrg_setiment(self):
+        if self.sentiment_n == 0:
+            return 0
+
+        return self.sentiment / self.sentiment_n
+    """
+
     def to_dict(self):
         d = {
             'conversation_id': self.conversation_id,
@@ -28,5 +36,12 @@ class ConversationAnalysis:
 
         if self.id:
             d['_id'] = self.id
+
+        return d
+
+    def to_str_dict(self):
+        d = self.to_dict()
+
+        d['conversation_id'] = str(d['conversation_id'])
 
         return d

@@ -4,6 +4,7 @@ import operator
 from flask import Flask, request, jsonify
 from flask_pymongo import PyMongo, ASCENDING
 from flask_socketio import SocketIO
+from flask_cors import CORS
 
 from bson.objectid import ObjectId
 
@@ -13,6 +14,9 @@ from models.message import Message
 from models.meme_rating import Meme_Rating
 from models.conversation import Conversation
 from models.conversation_analysis import ConversationAnalysis
+from models.user_topics import User_Topics
+
+from insights.nlp import TextAnalysis
 
 import libmemes
 
@@ -21,12 +25,22 @@ app = Flask(__name__)
 # Load configuration
 app.config['MONGO_URI'] = os.environ['MONGO_URI']
 
+# Setup CORS
+cors = CORS(app, resources={
+    r"*": {
+        "origins": "*"
+    }
+})
+
 # Setup MongoDB
 mongo = PyMongo(app)
 
 # Setup SocketIO
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app)
+
+# Setup text analysis
+text_analysis = TextAnalysis(mongo)
 
 # Insert memes if they don't exist
 if mongo.db.memes.count_documents({}) == 0:
@@ -35,11 +49,14 @@ if mongo.db.memes.count_documents({}) == 0:
     for meme_model in meme_models:
         mongo.db.memes.insert(meme_model.to_dict())
         print("Inserted meme: {}".format(meme_model.image_path))
+
+    print("Finished inserting memes")
 else:
     print("Memes already inserted")
 
 @app.route("/api/users", methods=['POST'])
 def create_user():
+    # Save into db
     req_user = request.json['user']
 
     user = User(id=None,
@@ -49,9 +66,20 @@ def create_user():
                 age=req_user['age'],
                 location=req_user['location'])
 
-    user_id = mongo.db.users.insert(user.to_dict())
+    # Check user with username isn't registered
+    if mongo.db.users.count_documents({ 'username': user.username }) > 0:
+        return jsonify({
+            'error': "Username {} is already taken".format(user.username)
+        }), 401
 
+    user_id = mongo.db.users.insert(user.to_dict())
     user.id = str(user_id)
+
+    # Create a user topics for user
+    user_topics = User_Topics(id=None,
+                              user_id=ObjectId(user_id),
+                              topics=[])
+    mongo.db.user_topics.insert(user_topics.to_dict())
 
     return jsonify({
         'user': user.to_dict()
@@ -66,8 +94,7 @@ def get_user(user_id):
                 name=db_user['name'],
                 profile_picture_path=db_user['profile_picture_path'],
                 age = db_user['age'],
-                location = db_user['location']
-                )
+                location = db_user['location'])
 
     return jsonify({
         'user': user.to_dict()
@@ -282,6 +309,9 @@ def send_message(conversation_id):
     # ... Save conversation analysis model
     mongo.db.conversation_analysis.update({ '_id': conversation_analysis.id },
                                           conversation_analysis.to_dict())
+
+    # Analyse conversation
+    text_analysis.analyse(conversation_id)
 
     # Notify via websocket
     socketio.emit("/conversations/{}/new_message".format(conversation_id),

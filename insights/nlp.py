@@ -6,6 +6,8 @@ from google.cloud.language import types
 from bson.objectid import ObjectId
 
 from models.conversation_analysis import ConversationAnalysis
+from models.conversation import Conversation
+from models.user_topics import User_Topics
 
 class TextAnalysis:
     client = language.LanguageServiceClient()
@@ -16,83 +18,95 @@ class TextAnalysis:
 
     def analyse(self, conversation_id):
         # Get conversation analysis model
-        db_conversation_analysis = mongo.db.conversation_analysis.find_one({
+        db_conversation_analysis = self.mongo.db.conversation_analysis.find_one({
             'conversation_id': ObjectId(conversation_id)
         })
 
         conversation_analysis = ConversationAnalysis.from_db_document(db_conversation_analysis)
 
+        # Get conversation
+        db_conversation = self.mongo.db.conversations.find_one({ '_id': ObjectId(conversation_id) })
+
+        conversation = Conversation.from_db_document(db_conversation)
+
+        # Get user topics for each user
+        # ... User a
+        db_user_a_topics = self.mongo.db.user_topics.find_one({ 'user_id': conversation.user_a_id })
+        user_a_topics = User_Topics.from_db_document(db_user_a_topics)
+
+        # ... User b
+        db_user_b_topics = self.mongo.db.user_topics.find_one({ 'user_id': conversation.user_b_id })
+        user_b_topics = User_Topics.from_db_document(db_user_b_topics)
+
         # Setup the GAPI NLP request
-        document = types.Document(
-            content=TBD,
+        # ... Make one for entire conversation
+        both_text = "{} {}".format(conversation_analysis.text_to_analyse_a,
+                                   conversation_analysis.text_to_analyse_b)
+
+        document_both = types.Document(
+            content=both_text,
             type=enums.Document.Type.PLAIN_TEXT)
 
-
-def analysis(conversation):
-    try:
-        client = language.LanguageServiceClient()
-        document = types.Document(
-            content=conversation,
+        # ... Make one request for user a's text
+        document_a = types.Document(
+            content=conversation_analysis.text_to_analyse_a,
             type=enums.Document.Type.PLAIN_TEXT)
-        sentiment = client.analyze_sentiment(document=document).document_sentiment
-        categories = client.classify_text(document).categories
-        #entities = client.analyze_entities(document).entities
-    except:
-        return
 
-    chat = create_conversation()
-    chat['score'], chat['magnitude'] = sentiment.score, sentiment.magnitude
+        # ... Make one request for user b's text
+        document_b = types.Document(
+            content=conversation_analysis.text_to_analyse_b,
+            type=enums.Document.Type.PLAIN_TEXT)
 
-    #entity_type = {'UNKNOWN', 'PERSON', 'LOCATION', 'ORGANIZATION',
-     #              'EVENT', 'WORK_OF_ART', 'CONSUMER_GOOD', 'OTHER'}
+        # Make sentiment call
+        sentiment = self.make_sentiment_call(document_both)
 
-    """for entity in entities:
-        print('=' * 20)
-        print(u'{:<16}: {}'.format('name', entity.name))
-        #print(u'{:<16}: {}'.format('type', entity_type[entity.type]))
-        print(u'{:<16}: {}'.format('metadata', entity.metadata))
-        print(u'{:<16}: {}'.format('salience', entity.salience))
-        print(u'{:<16}: {}'.format('wikipedia_url',
-                                   entity.metadata.get('wikipedia_url', '-')))
+        # Update conversation analysis sentiment
+        conversation_analysis.sentiment = sentiment.score * sentiment.magnitude
+        #conversation_analysis.sentiment_n += 1
 
-    for category in categories:
-        print(u'=' * 20)
-        print(u'{:<16}: {}'.format('name', category.name))
-        print(u'{:<16}: {}'.format('confidence', category.confidence))
-"""
-    for category in categories:
-        chat['categories'] += category.name
-    return success
+        # Make categories calls
+        user_a_categories = self.make_categories_call(document_a)
+        user_b_categories = self.make_categories_call(document_b)
 
+        if user_a_categories is not None:
+            # Add new categories
+            for category in user_a_categories:
+                name = category.name
 
-def get_message_accumulator():
-    #Get message
-    return file
+                if name not in user_a_topics.topics:
+                    user_a_topics.topics.append(name)
 
+            # Save topics
+            self.mongo.db.user_topics.update({ '_id': user_a_topics.id },
+                                             user_a_topics.to_dict())
 
-def concatenate_message(file):
-    #Add previous
-    file += get_message_accumulator()
-    return file
+            # Clear text to analyse a
+            conversation_analysis.text_to_analyse_a = ""
 
+        if user_b_categories is not None:
+            # Add new categories
+            for category in user_b_categories:
+                name = category.name
 
-def create_conversation():
-    conversation = {
-        'score': 0,
-        'magnitude': 0,
-        'categories': '',
-    }
-    return conversation
+                if name not in user_b_topics.topics:
+                    user_b_topics.topics.append(name)
 
+            # Save topics
+            self.mongo.db.user_topics.update({ '_id': user_b_topics.id },
+                                             user_b_topics.to_dict())
 
-while analysis(file) == 0:
-    file = concatenate_message(file)
+            # Clear text to analyse a
+            conversation_analysis.text_to_analyse_b = ""
 
-for x in chat:
-    print(x)
+        # Update conversation analysis
+        self.mongo.db.conversation_analysis.update({ '_id': conversation_analysis.id },
+                                              conversation_analysis.to_dict())
 
+    def make_sentiment_call(self, document):
+        return self.client.analyze_sentiment(document=document).document_sentiment
 
-
-
-
-
+    def make_categories_call(self, document):
+        try:
+            return self.client.classify_text(document).categories
+        except Exception as e:
+            return None
