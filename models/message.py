@@ -26,3 +26,12 @@ class Message:
             d['_id'] = self.id
 
         return d
+
+    def to_str_dict(self):
+        d = self.to_dict()
+
+        for key in ['conversation_id', 'sending_user_id', '_id']:
+            if key in d:
+                d[key] = str(d[key])
+
+        return d

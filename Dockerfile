@@ -1,5 +1,6 @@
 FROM python:2.7.15-stretch
 
+# Setup Server
 WORKDIR /app
 
 COPY requirements.txt .

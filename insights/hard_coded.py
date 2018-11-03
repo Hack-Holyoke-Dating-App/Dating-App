@@ -140,4 +140,4 @@ class HardCodedAnalysis:
                 conversation_analysis.sent_insights.append("{}.{}".format(other_letter, INSIGHT_TOPIC))
 
         # Save conversation analysis
-        self.mongo.db.conversation_analysis.update({ '_id': conversation_analysis.id }, conversation_analysis)
+        self.mongo.db.conversation_analysis.update({ '_id': conversation_analysis.id }, conversation_analysis.to_dict())
