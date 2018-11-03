@@ -24,7 +24,7 @@ Collection: `users`
 - `username` (String)
 - `name` (String)
 - `profile_picture_path` (String)
-- `Age` (Integer)
+- `age` (Integer)
 - `location` (String)
 
 ## Meme
