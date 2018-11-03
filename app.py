@@ -45,7 +45,9 @@ def create_user():
 
     user.id = str(user_id)
 
-    return jsonify(user.to_dict())
+    return jsonify({
+        'user': user.to_dict()
+    })
 
 @app.route("/api/users/<user_id>", methods=['GET'])
 def get_user(user_id):
@@ -59,7 +61,9 @@ def get_user(user_id):
                 location = db_user['location']
                 )
 
-    return jsonify(user.to_dict())
+    return jsonify({
+        'user': user.to_dict()
+    })
 
 
 @app.route("/api/memes", methods=['GET'])
@@ -73,19 +77,10 @@ def get_memes():
         meme.id = str(meme.id)
         all_memes.append(meme.to_dict())
 
-    return jsonify(all_memes)
+    return jsonify({
+        'memes': all_memes
+    })
 
-@app.route("/api/conversations/<conversation_id>/messages", methods=['GET'])
-def get_messages():
-    db_messages = mongo.db.messages.find({})
-    all_messages = []
-
-    for db_message in db_messages:
-        message = Message(id=db_message['_id'])
-        message.id = str(message.id)
-        all_messages.append(message.to_dict())
-
-    print(all_messages)
 
 @app.route("/api/memes/<meme_id>", methods=['POST'])
 def rate_meme(meme_id):
@@ -100,7 +95,9 @@ def rate_meme(meme_id):
 
     meme_rating.id = str(meme_rating_id)
 
-    return jsonify(meme_rating.to_dict())
+    return jsonify({
+        'meme_rating': meme_rating.to_dict()
+    })
 
 @app.route("/api/conversations", methods=['POST'])
 def create_conversation():
@@ -116,4 +113,28 @@ def create_conversation():
     conversation.user_a_id = str(conversation.user_a_id)
     conversation.user_b_id = str(conversation.user_b_id)
 
-    return jsonify(conversation.to_dict())
+    return jsonify({
+        'conversation': conversation.to_dict()
+    })
+
+@app.route("/api/conversations/<conversation_id>/messages", methods=['GET'])
+def get_messages(conversation_id):
+    db_messages = mongo.db.messages.find({ 'conversation_id': ObjectId(conversation_id) })
+    all_messages = []
+
+    for db_message in db_messages:
+        message = Message(id=db_message['_id'],
+                          conversation_id=db_message['conversation_id'],
+                          sending_user_id=db_message['sending_user_id'],
+                          time=db_message['time'],
+                          text=db_message['text'])
+
+        message.id = str(message.id)
+        message.conversation_id = str(message.conversation_id)
+        message.sending_user_id = str(message.sending_user_id)
+
+        all_messages.append(message.to_dict())
+
+    return jsonify({
+        'messages': all_messages
+    })
