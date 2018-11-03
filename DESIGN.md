@@ -35,9 +35,10 @@ Collection: `users`
 Collection: `memes`
 
 - `_id` (String)
+- `image_path` (String)
 
 ## Meme Rating
-Collection `memes_rating`
+Collection `meme_ratings`
 
 - `_id` (String)
 - `meme_id` (String)
@@ -85,7 +86,7 @@ Response:
 ### Get User
 GET `/api/users/<user id>`
 
-Status: written
+Status: Written
 
 Request: None
 
@@ -106,6 +107,8 @@ Response:
 ## Meme Rating Endpoints
 ### Rate Meme
 POST `/api/memes/<meme id>`
+
+Status: Written
 
 Request:
 

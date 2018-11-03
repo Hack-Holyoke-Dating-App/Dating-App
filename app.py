@@ -3,9 +3,12 @@ import os
 from flask import Flask, request, jsonify
 from flask_pymongo import PyMongo
 from bson.objectid import ObjectId
+
 from models.user import User
 from models.meme import Meme
 from models.message import Message
+from models.meme_rating import Meme_Rating
+import libmemes
 
 app = Flask(__name__)
 
@@ -14,6 +17,16 @@ app.config['MONGO_URI'] = os.environ['MONGO_URI']
 
 # Setup MongoDB
 mongo = PyMongo(app)
+
+# Insert memes if they don't exist
+if mongo.db.memes.count_documents({}) == 0:
+    meme_models = libmemes.make_meme_models()
+
+    for meme_model in meme_models:
+        mongo.db.memes.insert(meme_model.to_dict())
+        print("Inserted meme: {}".format(meme_model.image_path))
+else:
+    print("Memes already inserted")
 
 @app.route("/api/users", methods=['POST'])
 def create_user():
@@ -35,7 +48,7 @@ def create_user():
 @app.route("/api/users/<user_id>", methods=['GET'])
 def get_user(user_id):
     db_user = mongo.db.users.find_one({'_id' :  ObjectId(user_id)})
-    
+
     user = User(id=user_id,
                 username=db_user['username'],
                 name=db_user['name'],
@@ -43,8 +56,9 @@ def get_user(user_id):
                 age = db_user['age'],
                 location = db_user['location']
                 )
-    
+
     return jsonify(user.to_dict())
+
 
 @app.route("/api/memes", methods=['GET'])
 def get_memes():
@@ -70,3 +84,18 @@ def get_messages():
         
     print(all_messages)
     
+@app.route("/api/memes/<meme_id>", methods=['POST'])
+def rate_meme(meme_id):
+    req_meme_rating = request.json['meme_rating']
+
+    meme_rating = Meme_Rating(id=None,
+                              meme_id=ObjectId(meme_id),
+                              user_id=req_meme_rating['user_id'],
+                              liked=req_meme_rating['liked'])
+
+    meme_rating_id = mongo.db.meme_ratings.insert(meme_rating.to_dict())
+
+    meme_rating.id = str(meme_rating_id)
+
+    return jsonify(meme_rating.to_dict())
+
