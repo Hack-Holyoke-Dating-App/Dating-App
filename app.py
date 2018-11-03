@@ -3,6 +3,8 @@ import operator
 
 from flask import Flask, request, jsonify
 from flask_pymongo import PyMongo
+from flask_socketio import SocketIO
+
 from bson.objectid import ObjectId
 
 from models.user import User
@@ -212,9 +214,31 @@ def create_conversation():
         'conversation': conversation.to_dict()
     })
 
+@app.route("/api/conversations/<conversation_id>/messages", methods=['POST'])
+def send_message(conversation_id):
+    # Insert into DB
+    req_message = request.json['message']
+
+    message = Message(id=None,
+                      conversation_id=conversation_id,
+                      sending_user_id=req_message['sending_user_id'],
+                      time=req_message['time'],
+                      text=req_message['text'])
+
+    message_id = mongo.db.messages.insert(message)
+    message.id = str(message_id)
+    message.sending_user_id = str(message.sending_user_id)
+
+    # Notify via websocket
+    SocketIO.emit("/conversations/{}/new_message".format(conversation_id),
+                  message, broadcast=True)
+
 @app.route("/api/conversations/<conversation_id>/messages", methods=['GET'])
 def get_messages(conversation_id):
-    db_messages = mongo.db.messages.find({ 'conversation_id': ObjectId(conversation_id) })
+    db_messages = mongo.db.messages.find({
+        'conversation_id': ObjectId(conversation_id)
+    }).sort('time', PyMongo.ASCENDING)
+
     all_messages = []
 
     for db_message in db_messages:

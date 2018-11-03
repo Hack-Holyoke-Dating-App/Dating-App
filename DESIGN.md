@@ -148,14 +148,20 @@ Response:
 ### Send Message
 POST `/api/conversations/<coversation id>/messages`
 
+Status: Written
+
 Request:
 
 - `message`: Message to send
 
-Response: None
+Response:
+
+- `message`: Sent message
 
 ### Get Messages
 GET `/api/conversations/<conversation id>/messages`
+
+Status: Written
 
 Request: None
 
@@ -180,6 +186,8 @@ Payload:
 ## Message Topics
 ### New Message Topic
 Topic: `/conversations/<conversation id>/new_message`
+
+Status: Written
 
 Description: Receives a message when a new message is sent in a conversation.
 
