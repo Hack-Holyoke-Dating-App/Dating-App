@@ -120,6 +120,8 @@ Response: None
 ### Create Conversation
 POST `/api/conversations`
 
+Status: Written
+
 Request: 
 
 - `conversation`: Conversation to create

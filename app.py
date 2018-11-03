@@ -6,6 +6,8 @@ from bson.objectid import ObjectId
 
 from models.user import User
 from models.meme_rating import Meme_Rating
+from models.conversation import Coversation
+
 import libmemes
 
 app = Flask(__name__)
@@ -71,3 +73,19 @@ def rate_meme(meme_id):
     meme_rating.id = str(meme_rating_id)
 
     return jsonify(meme_rating.to_dict())
+
+@app.route("/api/conversations", methods=['POST'])
+def create_conversation():
+    req_conversation = request.json['conversation']
+
+    conversation = Coversation(id=None,
+                                user_a_id=ObjectId(req_conversation['user_a_id']),
+                                user_b_id=ObjectId(req_conversation['user_b_id']))
+
+    conversation_id = mongo.db.conversations.insert(conversation.to_dict())
+
+    conversation.id = str(conversation_id)
+    conversation.user_a_id = str(conversation.user_a_id)
+    conversation.user_b_id = str(conversation.user_b_id)
+
+    return jsonify(conversation.to_dict())
