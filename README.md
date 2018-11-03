@@ -17,7 +17,7 @@ First you must build the Docker container:
 **Linux / OSX:**  
 
 ```
-# ./scripts/docker-build.sh
+# make build
 ```
 
 **Windows:**  
@@ -31,7 +31,7 @@ Then start the Docker container:
 **Linux / OSX:**  
 
 ```
-# ./scripts/docker-run.sh
+make run
 ```
 
 **Windows:**  
@@ -46,7 +46,7 @@ To start a command prompt for development:
 **Linux / OSX:**  
 
 ```
-# ./scripts/docker-shell.sh
+make shell
 ```
 
 **Windows:**   
