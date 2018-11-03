@@ -2,7 +2,7 @@ import os
 import operator
 
 from flask import Flask, request, jsonify
-from flask_pymongo import PyMongo
+from flask_pymongo import PyMongo, ASCENDING
 from flask_socketio import SocketIO
 
 from bson.objectid import ObjectId
@@ -242,13 +242,14 @@ def send_message(conversation_id):
     req_message = request.json['message']
 
     message = Message(id=None,
-                      conversation_id=conversation_id,
-                      sending_user_id=req_message['sending_user_id'],
+                      conversation_id=ObjectId(conversation_id),
+                      sending_user_id=ObjectId(req_message['sending_user_id']),
                       time=req_message['time'],
                       text=req_message['text'])
 
     message_id = mongo.db.messages.insert(message.to_dict())
     message.id = str(message_id)
+    message.conversation_id = str(message.conversation_id)
     message.sending_user_id = str(message.sending_user_id)
 
     # Track in conversation analysis model
@@ -295,7 +296,7 @@ def send_message(conversation_id):
 def get_messages(conversation_id):
     db_messages = mongo.db.messages.find({
         'conversation_id': ObjectId(conversation_id)
-    }).sort('time', PyMongo.ASCENDING)
+    }).sort('time', ASCENDING)
 
     all_messages = []
 
