@@ -14,43 +14,20 @@ A Docker container is used to run the application.
 ## Build Docker Container
 First you must build the Docker container:  
 
-**Linux / OSX:**  
-
 ```
-# make build
+make build
 ```
 
-**Windows:**  
-```
-# ./scripts/docker-build.bat
-```
-
-## Run Docker Container
-Then start the Docker container:
-
-**Linux / OSX:**  
+## Run Flask
+Start Flask in the Docker container:
 
 ```
 make run
 ```
 
-**Windows:**  
-
-```
-# ./scripts/docker-run.bat
-```
-
 ## Command Prompt
 To start a command prompt for development:
 
-**Linux / OSX:**  
-
 ```
 make shell
-```
-
-**Windows:**   
-
-```
-# ./scripts/docker-shell.bat
 ```
