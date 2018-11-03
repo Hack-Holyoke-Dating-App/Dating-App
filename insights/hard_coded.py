@@ -91,7 +91,7 @@ class HardCodedAnalysis:
                 'sending_user_id': ObjectId(other_user_id)
             })
 
-            if last_sender_msg_count > 0 and other_msg_count:
+            if last_sender_msg_count > 0 and other_msg_count > 0:
 
                 # Compute ratios
                 last_sender_ratio = last_sender_msg_count / other_msg_count
@@ -104,11 +104,13 @@ class HardCodedAnalysis:
                         last_sender_ratio > 2.5:
 
                     ratio_user_ids.append(ObjectId(last_message_sender_id))
+                    conversation_analysis.sent_insights.append("{}.{}".format(last_message_sender_letter, INSIGHT_RATIO))
 
                 if ("{}.{}".format(other_letter, INSIGHT_RATIO) not in conversation_analysis.sent_insights) and \
                         other_ratio > 2.5:
 
                     ratio_user_ids.append(ObjectId(other_user_id))
+                    conversation_analysis.sent_insights.append("{}.{}".format(other_letter, INSIGHT_RATIO))
 
                 # Send insights
                 for user_id in ratio_user_ids:
@@ -126,10 +128,16 @@ class HardCodedAnalysis:
             db_other_user_topics = self.mongo.db.user_topics.find_one({ 'user_id': ObjectId(other_user_id) })
             other_user_topics = User_Topics.from_db_document(db_other_user_topics)
 
-            msg = "It doesn't look like your match is interested, try talking about {}".format(", ".join(other_user_topics.topics))
+            if len(other_user_topics.topics) > 0:
+                msg = "It doesn't look like your match is interested, try talking about {}".format(", ".join(other_user_topics.topics))
 
-            send_insight(self.socketio,
-                         conversation_id,
-                         other_user_id,
-                         INSIGHT_TOPIC,
-                         msg)
+                send_insight(self.socketio,
+                             conversation_id,
+                             other_user_id,
+                             INSIGHT_TOPIC,
+                             msg)
+
+                conversation_analysis.sent_insights.append("{}.{}".format(other_letter, INSIGHT_TOPIC))
+
+        # Save conversation analysis
+        self.mongo.db.conversation_analysis.update({ '_id': conversation_analysis.id }, conversation_analysis)
