@@ -96,6 +96,17 @@ Response:
 
 - `user`: Requested user
 
+### Get User Conversations
+GET `/api/users/<user_id>/conversations`
+
+Status: Written
+
+Request: None
+
+Response:
+
+- `conversations`: Array of conversations user is in
+
 ## Match Endpoints
 ### Get Matches
 GET `/api/users/<user id>/matches`

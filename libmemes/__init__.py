@@ -2,16 +2,12 @@ from models.meme import Meme
 
 BASE_MEME_PATH='/static/memes/'
 MEME_PATHS = [
-    'butt_crack.gif',
     'drunk_baby.jpg',
     'keep_calm_vader.jpg',
-    'trick_dog.gif',
     'wood_face.jpg',
     'catching_shrimp.jpg',
     'harry_potter.jpg',
     'success_kid.jpg',
-    'trip.gif',
-    'dead_kids.gif',
     'house_fire_kid.jpeg',
     'the_office.jpeg',
     'trump_newspaper_mouth.jpg',

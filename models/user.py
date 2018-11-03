@@ -7,6 +7,15 @@ class User:
         self.age = age
         self.location = location
 
+    @classmethod
+    def from_db_document(cls, doc):
+        return User(id=doc['_id'],
+                    username=doc['username'],
+                    name=doc['name'],
+                    profile_picture_path=doc['profile_picture_path'],
+                    age=doc['age'],
+                    location=doc['location'])
+
     def to_dict(self):
         d = {
                 'username' : self.username,
@@ -18,5 +27,13 @@ class User:
 
         if self.id:
             d['_id'] = self.id
+
+        return d
+
+    def to_str_dict(self):
+        d = self.to_dict()
+
+        if self.id:
+            d['_id'] = str(self.id)
 
         return d

@@ -22,3 +22,12 @@ class Conversation:
             d['_id'] = self.id
 
         return d
+
+    def to_str_dict(self):
+        d = self.to_dict()
+
+        for key in ['_id', 'user_a_id', 'user_b_id']:
+            if key in d:
+                d[key] = str(d[key])
+
+        return d

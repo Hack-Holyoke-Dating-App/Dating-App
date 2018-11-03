@@ -16,3 +16,12 @@ class Meme_Rating:
             d['_id'] = self.id;
 
         return d
+
+    def to_str_dict(self):
+        d = self.to_dict()
+
+        for key in ['meme_id', 'user_id', '_id']:
+            if key in d:
+                d[key] = str(d[key])
+
+        return d
