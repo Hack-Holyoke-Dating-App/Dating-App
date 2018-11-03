@@ -7,7 +7,7 @@ class Message:
     
     def to_dict(self):
         return {
-                'id' : self.id,
+                '_id' : self.id,
                 'sending_user_id' : self.sending_user_id,
                 'time' : self.time,
                 'text' : self.text
