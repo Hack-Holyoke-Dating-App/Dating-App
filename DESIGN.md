@@ -22,6 +22,7 @@ Collection: `users`
 
 - `_id` (String)
 - `name` (String)
+- `profile_picture_path` (String)
 - `Age` (Integer)
 - `location` (String)
 
