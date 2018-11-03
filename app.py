@@ -17,6 +17,7 @@ from models.conversation_analysis import ConversationAnalysis
 from models.user_topics import User_Topics
 
 from insights.nlp import TextAnalysis
+from insights.hard_coded import HardCodedAnalysis
 
 import libmemes
 
@@ -41,6 +42,7 @@ socketio = SocketIO(app)
 
 # Setup text analysis
 text_analysis = TextAnalysis(mongo)
+hard_coded_analysis = HardCodedAnalysis(mongo, socketio)
 
 # Insert memes if they don't exist
 if mongo.db.memes.count_documents({}) == 0:
@@ -57,6 +59,7 @@ else:
 def analyse_hook(conversation_id):
     # Analyse conversation
     text_analysis.analyse(conversation_id)
+    hard_coded_analysis.analyse(conversation_id)
 
 @app.route("/api/users", methods=['POST'])
 def create_user():
@@ -72,9 +75,12 @@ def create_user():
 
     # Check user with username isn't registered
     if mongo.db.users.count_documents({ 'username': user.username }) > 0:
+        db_user = mongo.db.users.find_one({ 'username': user.username })
+        user = User.from_db_document(db_user)
+
         return jsonify({
-            'error': "Username {} is already taken".format(user.username)
-        }), 401
+            'user': user.to_str_dict
+        })
 
     user_id = mongo.db.users.insert(user.to_dict())
     user.id = str(user_id)
@@ -226,10 +232,10 @@ def rate_meme(meme_id):
 
     meme_rating_id = mongo.db.meme_ratings.insert(meme_rating.to_dict())
 
-    meme_rating.id = str(meme_rating_id)
+    meme_rating.id = meme_rating_id
 
     return jsonify({
-        'meme_rating': meme_rating.to_dict()
+        'meme_rating': meme_rating.to_str_dict()
     })
 
 @app.route("/api/conversations", methods=['POST'])
@@ -265,6 +271,24 @@ def create_conversation():
 
     return jsonify({
         'conversation': conversation.to_dict()
+    })
+
+@app.route("/api/users/<user_id>/conversations", methods=['GET'])
+def get_conversations(user_id):
+    db_conversations = mongo.db.conversations.find({
+        '$or': [
+            { 'user_a_id': ObjectId(user_id) },
+            { 'user_b_id': ObjectId(user_id) }
+        ]
+    })
+
+    conversations = []
+
+    for db_conversation in db_conversations:
+        conversations.append(Conversation.from_db_document(db_conversation).to_str_dict())
+
+    return jsonify({
+        'conversations': conversations
     })
 
 @app.route("/api/conversations/<conversation_id>/messages", methods=['POST'])
