@@ -5,8 +5,13 @@ class Coversation:
         self.user_b_id = user_b_id
         
     def to_dict(self):
-        return {
-                '_id' : self.id,
+        d = {
                 'user_a_id' : self.user_a_id,
                 'user_b_id' : self.user_b_id
                 }
+        
+        if (self.id):
+            d['_id'] = self.id
+            
+        return d
+    

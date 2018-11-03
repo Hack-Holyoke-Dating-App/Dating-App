@@ -3,7 +3,11 @@ class Meme:
         self.id = id
         
     def to_dict(self):
-        return {
-                '_id' : self.id
+        d = { 
                 }
+        
+        if (self.id):
+            d['_id'] = self.id
+            
+        return d
         

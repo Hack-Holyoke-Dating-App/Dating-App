@@ -6,9 +6,13 @@ class Meme_Rating:
         self.liked = liked
         
     def to_dict(self):
-        return {
-                '_id' : self.id,
+        d = {
                 'meme_id' : self.meme_id,
                 'user_id' : self.user_id,
                 'liked' : self.liked,
                 }
+        
+        if (self.id):
+            d['_id'] = self.id;
+            
+        return d
