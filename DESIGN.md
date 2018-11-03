@@ -21,6 +21,7 @@ Dating app design.
 Collection: `users`
 
 - `_id` (String)
+- `username` (String)
 - `name` (String)
 - `profile_picture_path` (String)
 - `Age` (Integer)
