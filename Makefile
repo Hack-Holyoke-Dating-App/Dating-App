@@ -1,10 +1,28 @@
 .PHONY: build run shell
 
-build:
-	./scripts/docker-build.sh
+TAG=hack-holyoke-dating-app/dating-app:latest
+GUEST_PATH=/app
+HOST_PATH=${PWD}
+GUEST_SHELL=/bin/bash
 
+# build the docker container
+build:
+	docker build -t "${TAG}" .
+
+# run flask server in docker
 run:
-	./scripts/docker-run.sh
+	docker run \
+		-it \
+		--rm \
+		--net host \
+		-v "${HOST_PATH}:${GUEST_PATH}" \
+		"${TAG}"
 
 shell:
-	./scripts/docker-shell.sh
+	docker run \
+		-it \
+		--rm \
+		--net host \
+		-v "${HOST_PATH}:${GUEST_PATH}" \
+		"${TAG}" \
+		"${GUEST_SHELL}"
