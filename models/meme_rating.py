@@ -7,7 +7,7 @@ class Meme_Rating:
         
     def to_dict(self):
         return {
-                'id' : self.id,
+                '_id' : self.id,
                 'meme_id' : self.meme_id,
                 'user_id' : self.user_id,
                 'liked' : self.liked,

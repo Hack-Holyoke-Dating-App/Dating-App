@@ -6,7 +6,7 @@ class Coversation:
         
     def to_dict(self):
         return {
-                'id' : self.id,
+                '_id' : self.id,
                 'user_a_id' : self.user_a_id,
                 'user_b_id' : self.user_b_id
                 }

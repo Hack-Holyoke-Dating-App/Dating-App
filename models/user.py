@@ -9,7 +9,7 @@ class User:
         
     def to_dict(self):
         return {
-                'id' : self.id,
+                '_id' : self.id,
                 'username' : self.username,
                 'name': self.name,
                 'profile_picture_path' : self.profile_picture_path,
