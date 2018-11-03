@@ -4,6 +4,7 @@ from flask import Flask, request, jsonify
 from flask_pymongo import PyMongo
 from bson.objectid import ObjectId
 from models.user import User
+import libmemes
 
 app = Flask(__name__)
 
@@ -12,6 +13,16 @@ app.config['MONGO_URI'] = os.environ['MONGO_URI']
 
 # Setup MongoDB
 mongo = PyMongo(app)
+
+# Insert memes if they don't exist
+if mongo.db.memes.count_documents({}) == 0:
+    meme_models = libmemes.make_meme_models()
+
+    for meme_model in meme_models:
+        mongo.db.memes.insert(meme_model.to_dict())
+        print("Inserted meme: {}".format(meme_model.image_path))
+else:
+    print("Memes already inserted")
 
 @app.route("/api/users", methods=['POST'])
 def create_user():
