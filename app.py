@@ -198,6 +198,7 @@ def rate_meme(meme_id):
 
 @app.route("/api/conversations", methods=['POST'])
 def create_conversation():
+    # Insert into DB
     req_conversation = request.json['conversation']
 
     conversation = Coversation(id=None,
@@ -209,6 +210,12 @@ def create_conversation():
     conversation.id = str(conversation_id)
     conversation.user_a_id = str(conversation.user_a_id)
     conversation.user_b_id = str(conversation.user_b_id)
+
+    # Notify via Socket
+    for user_id in [conversation.user_a_id, conversation.user_b_id]:
+        SocketIO.emit("/users/{}/new_conversations".format(user_id),
+                      { 'conversation': conversation.to_dict() },
+                      broadcast=True)
 
     return jsonify({
         'conversation': conversation.to_dict()
@@ -231,7 +238,8 @@ def send_message(conversation_id):
 
     # Notify via websocket
     SocketIO.emit("/conversations/{}/new_message".format(conversation_id),
-                  message, broadcast=True)
+                  { 'message': message.to_dict() },
+                  broadcast=True)
 
 @app.route("/api/conversations/<conversation_id>/messages", methods=['GET'])
 def get_messages(conversation_id):
