@@ -4,6 +4,8 @@ from flask import Flask, request, jsonify
 from flask_pymongo import PyMongo
 from bson.objectid import ObjectId
 from models.user import User
+from models.meme import Meme
+from models.message import Message
 
 app = Flask(__name__)
 
@@ -43,3 +45,28 @@ def get_user(user_id):
                 )
     
     return jsonify(user.to_dict())
+
+@app.route("/api/memes", methods=['GET'])
+def get_memes():
+    db_memes = mongo.db.memes.find({})
+    all_memes = []
+    
+    for db_meme in db_memes:
+        meme = Meme(id=db_meme['_id'])
+        meme.id = str(meme.id)
+        all_memes.append(meme.to_dict())
+        
+    return jsonify(all_memes)
+    
+@app.route("/api/conversations/<conversation_id>/messages", methods=['GET'])
+def get_messages():
+    db_messages = mongo.db.messages.find({})
+    all_messages = []
+    
+    for db_message in db_messages:
+        message = Message(id=db_message['_id'])
+        message.id = str(message.id)
+        all_messages.append(message.to_dict())
+        
+    print(all_messages)
+    
