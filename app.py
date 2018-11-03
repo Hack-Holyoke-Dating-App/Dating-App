@@ -1,6 +1,9 @@
 import os
 
-from flask import Flask
+from flask import Flask, request, jsonify
+from flask_pymongo import PyMongo
+
+from models.user import User
 
 app = Flask(__name__)
 
@@ -10,14 +13,19 @@ app.config['MONGO_URI'] = os.environ['MONGO_URI']
 # Setup MongoDB
 mongo = PyMongo(app)
 
-@app.route("/")
-def hello():
-    return "there's nothing here."
+@app.route("/api/users", methods=['POST'])
+def create_user():
+    req_user = request.json['user']
 
-@app.route("/hello")
-def hello_word():
-    return "Hello, word"
+    user = User(id=None,
+                username=req_user['username'],
+                name=req_user['name'],
+                profile_picture_path=None,
+                age=req_user['age'],
+                location=req_user['location'])
 
-@app.route("/user/<rina>")
-def show_user_profile(rina):
-    return 'User %s' % rina
+    user_id = mongo.db.users.insert(user.to_dict())
+
+    user.id = str(user_id)
+
+    return jsonify(user.to_dict())
