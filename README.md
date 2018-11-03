@@ -11,16 +11,31 @@ Dating for social good.
 # Development
 A Docker container is used to run the application.  
 
+## Build Docker Container
 First you must build the Docker container:  
 
+**Linux / OSX:**  
+
 ```
-# make docker-build
+# ./scripts/docker-build.sh
 ```
 
+**Windows:**  
+```
+# ./scripts/docker-build.bat
+```
+
+## Run Docker Container
 Then start the Docker container:
 
+**Linux / OSX:**  
+
 ```
-# make docker
-# or
-# make
+# ./scripts/docker-run.sh
+```
+
+**Windows:**  
+
+```
+# ./scripts/docker-run.bat
 ```
