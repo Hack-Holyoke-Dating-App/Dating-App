@@ -35,6 +35,7 @@ Collection: `users`
 Collection: `memes`
 
 - `_id` (String)
+- `image_path` (String)
 
 ## Meme Rating
 Collection `meme_ratings`
