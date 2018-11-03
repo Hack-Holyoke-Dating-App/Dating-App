@@ -100,6 +100,8 @@ Response:
 ### Get Matches
 GET `/api/users/<user id>/matches`
 
+Status: Written
+
 Request: None
 
 Response:
