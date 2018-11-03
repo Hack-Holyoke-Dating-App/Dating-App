@@ -11,6 +11,7 @@ Dating app design.
     - [User Topic](#user-topic)
 - [API](#api)
     - [User Endpoints](#user-endpoints)
+    - [Match Endpoints](#match-endpoints)
     - [Meme Endpoints](#meme-endpoints)
     - [Meme Rating Endpoints](#meme-rating-endpoints)
     - [Conversation Endpoints](#conversation-endpoints)
@@ -56,6 +57,7 @@ Collection: `conversations`
 Collection: `messages`
 
 - `_id` (String)
+- `conversation_id` (String)
 - `sending_user_id` (String)
 - `time` (Time)
 - `text` (String)
@@ -94,9 +96,21 @@ Response:
 
 - `user`: Requested user
 
+## Match Endpoints
+### Get Matches
+GET `/api/users/matches/<user id>`
+
+Request: None
+
+Response:
+
+- `matches`: Array of users which match requesters meme preferences
+
 ## Meme Endpoints
 ### Get Memes
 GET `/api/memes`
+
+Status: Written
 
 Request: None
 
