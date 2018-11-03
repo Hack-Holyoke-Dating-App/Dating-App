@@ -3,7 +3,7 @@ import os
 from flask import Flask, request, jsonify
 from flask_pymongo import PyMongo
 
-import models
+from models.user import User
 
 app = Flask(__name__)
 
@@ -17,13 +17,15 @@ mongo = PyMongo(app)
 def create_user():
     req_user = request.json['user']
 
-    user = models.User(id=None,
-                       username=req_user['username]',
-                       name=req_user['name'],
-                       profile_picture_url=None,
-                       age=req_user['age'],
-                       location=req_user['location'])
+    user = User(id=None,
+                username=req_user['username'],
+                name=req_user['name'],
+                profile_picture_path=None,
+                age=req_user['age'],
+                location=req_user['location'])
 
-    inserted_user = mongo.db.users.insert(user.to_dict())
+    user_id = mongo.db.users.insert(user.to_dict())
 
-    return jsonify(inserted_user)
+    user.id = str(user_id)
+
+    return jsonify(user.to_dict())
