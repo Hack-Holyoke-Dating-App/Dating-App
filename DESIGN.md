@@ -17,6 +17,7 @@ Dating app design.
     - [Conversation Endpoints](#conversation-endpoints)
     - [Message Endpoints](#message-endpoints)
 - [WebSocket](#websocket)
+    - [Users Topics](#users-topics)
     - [Conversation Topics](#conversation-topics)
     - [Message Topics](#message-topics)
     - [Insight Topics](#insight-topics)
@@ -184,6 +185,18 @@ Response:
 
 
 # WebSocket
+## Users Topic
+### New User Topic
+Topic: `/users/new`
+
+Status: Written
+
+Description: Receives a message when a new user finishes rating all memes
+
+Who Subscribes: Everyone
+
+Payload: None
+
 ## Conversation Topics
 ### New Conversation Topic
 Topic: `/users/<user id>/new_conversations`

@@ -8,3 +8,9 @@ __pycache__
 
 # Google API Credentials
 gapi_key.json
+
+# Frontend
+frontend/
+
+# OSX
+__MACOSX

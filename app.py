@@ -28,7 +28,7 @@ app.config['MONGO_URI'] = os.environ['MONGO_URI']
 
 # Setup CORS
 cors = CORS(app, resources={
-    r"*": {
+    r"/*": {
         "origins": "*"
     }
 })
@@ -38,7 +38,8 @@ mongo = PyMongo(app)
 
 # Setup SocketIO
 app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app)
+socketio = SocketIO()
+socketio.init_app(app, cors_allowed_origins="*")
 
 # Setup text analysis
 text_analysis = TextAnalysis(mongo)
@@ -178,6 +179,12 @@ def get_matches(user_id):
         if user_id == other_user_id:
             continue
 
+        # If no meme vectors for user, just return empty
+        if user_id not in meme_vectors:
+            return jsonify({
+                'users': []
+            })
+
         # Otherwise compute difference
         similar_total = 0
         for this_user_meme_vector_slot in meme_vectors[user_id]:
@@ -223,6 +230,7 @@ def get_memes():
 
 @app.route("/api/memes/<meme_id>", methods=['POST'])
 def rate_meme(meme_id):
+    # Save meme rating
     req_meme_rating = request.json['meme_rating']
 
     meme_rating = Meme_Rating(id=None,
@@ -233,6 +241,11 @@ def rate_meme(meme_id):
     meme_rating_id = mongo.db.meme_ratings.insert(meme_rating.to_dict())
 
     meme_rating.id = meme_rating_id
+
+    # Check if last meme rating
+    if mongo.db.meme_ratings.count_documents({ 'user_id': ObjectId(meme_rating.user_id) }) == len(libmemes.MEME_PATHS):
+        print("new user")
+        socketio.emit('/users/new', {}, broadcast=True)
 
     return jsonify({
         'meme_rating': meme_rating.to_str_dict()
@@ -267,7 +280,7 @@ def create_conversation():
     # Notify via Socket
     for user_id in [conversation.user_a_id, conversation.user_b_id]:
         socketio.emit("/users/{}/new_conversations".format(user_id),
-                      { 'conversation': conversation.to_dict() },
+                      { 'conversation': conversation.to_str_dict() },
                       broadcast=True)
 
     return jsonify({
@@ -302,6 +315,12 @@ def send_message(conversation_id):
                       sending_user_id=ObjectId(req_message['sending_user_id']),
                       time=req_message['time'],
                       text=req_message['text'])
+
+    # Notify via websocket
+    socketio.emit("/conversations/{}/new_message".format(conversation_id),
+                  { 'message': message.to_str_dict() },
+                  broadcast=True)
+
 
     message_id = mongo.db.messages.insert(message.to_dict())
     message.id = str(message_id)
@@ -338,11 +357,6 @@ def send_message(conversation_id):
     # ... Save conversation analysis model
     mongo.db.conversation_analysis.update({ '_id': conversation_analysis.id },
                                           conversation_analysis.to_dict())
-
-    # Notify via websocket
-    socketio.emit("/conversations/{}/new_message".format(conversation_id),
-                  { 'message': message.to_dict() },
-                  broadcast=True)
 
     # Analyse conversation
     analyse_hook(conversation_id, message.sending_user_id)
@@ -382,6 +396,6 @@ def get_static_file(path):
 
     # if file doesn't exist
     if not os.path.isfile(os.path.join(frontend_dir, path)):
-        path = os.path.join(path, None)
+        path = 'index.html'
 
     return send_from_directory(frontend_dir, path)
