@@ -15,6 +15,10 @@ Dating app design.
     - [Meme Rating Endpoints](#meme-rating-endpoints)
     - [Conversation Endpoints](#conversation-endpoints)
     - [Message Endpoints](#message-endpoints)
+- [WebSocket](#websocket)
+    - [Conversation Topics](#conversation-topics)
+    - [Message Topics](#message-topics)
+    - [Insight Topics](#insight-topics)
 
 # Models
 ## User
@@ -137,3 +141,39 @@ Response:
 - `messages`: Array of messages in conversation
 
 
+# WebSocket
+## Conversation Topics
+### New Conversation Topic
+Topic: `/users/<user id>/new_conversations`
+
+Description: Receives a message when a new conversation is started with the user.
+
+Who Subscribes: A single user
+
+Payload:
+
+- `conversation`: New conversation
+
+## Message Topics
+### New Message Topic
+Topic: `/conversations/<conversation id>/new_message`
+
+Description: Receives a message when a new message is sent in a conversation.
+
+Who Subscribes: Both users in a conversation
+
+Payload:
+
+- `message`: New message
+
+## Insight Topics
+### New Insight Topic
+Topic: `/conversations/<conversation id>/user/<user id>/new_insight`
+
+Description: Receives a message when the server finds an insight for a user in a conversation.
+
+Who Subscribes: Each user in the conversation subscribes to their own topic
+
+Payload:
+
+- `insight`: Insight, schema TBD
