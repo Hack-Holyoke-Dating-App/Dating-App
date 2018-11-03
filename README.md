@@ -10,9 +10,17 @@ Dating for social good.
 Dating for social good.
 
 # Configuration
-Set the following environment variables to configure the application:
+The application uses environment variables for configuration.  
+
+The `.env` file contains the following configuration values:
 
 - `MONGO_URI`: MongoDB connection URI
+
+Load these configuration values by running:
+
+```
+. ./.env
+```
 
 # Development
 A Docker container is used to run the application.  
