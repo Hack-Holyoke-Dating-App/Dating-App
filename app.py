@@ -64,6 +64,7 @@ def analyse_hook(conversation_id, last_message_sender_id):
 
 @app.route("/api/users", methods=['POST'])
 def create_user():
+    print("create user")
     # Save into db
     req_user = request.json['user']
 
@@ -80,7 +81,7 @@ def create_user():
         user = User.from_db_document(db_user)
 
         return jsonify({
-            'user': user.to_str_dict
+            'user': user.to_str_dict()
         })
 
     user_id = mongo.db.users.insert(user.to_dict())
@@ -141,7 +142,10 @@ def get_matches(user_id):
                     profile_picture_path=db_user['profile_picture_path'],
                     age=db_user['age'],
                     location=db_user['location'])
-        users[str(user.id)] = user
+
+        if mongo.db.meme_ratings.count_documents({ 'user_id': user.id }) == len(libmemes.MEME_PATHS):
+            users[str(user.id)] = user
+
 
     meme_vectors = {}
 
@@ -235,7 +239,7 @@ def rate_meme(meme_id):
 
     meme_rating = Meme_Rating(id=None,
                               meme_id=ObjectId(meme_id),
-                              user_id=req_meme_rating['user_id'],
+                              user_id=ObjectId(req_meme_rating['user_id']),
                               liked=req_meme_rating['liked'])
 
     meme_rating_id = mongo.db.meme_ratings.insert(meme_rating.to_dict())
@@ -244,8 +248,8 @@ def rate_meme(meme_id):
 
     # Check if last meme rating
     if mongo.db.meme_ratings.count_documents({ 'user_id': ObjectId(meme_rating.user_id) }) == len(libmemes.MEME_PATHS):
-        print("new user")
-        socketio.emit('/users/new', {}, broadcast=True)
+        print("new user broadcast")
+        socketio.emit('/users/new', { 'new_user': True }, broadcast=True)
 
     return jsonify({
         'meme_rating': meme_rating.to_str_dict()
