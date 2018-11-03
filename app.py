@@ -11,7 +11,8 @@ from models.user import User
 from models.meme import Meme
 from models.message import Message
 from models.meme_rating import Meme_Rating
-from models.conversation import Coversation
+from models.conversation import Conversation
+from models.conversation_analysis import ConversationAnalysis
 
 import libmemes
 
@@ -22,6 +23,10 @@ app.config['MONGO_URI'] = os.environ['MONGO_URI']
 
 # Setup MongoDB
 mongo = PyMongo(app)
+
+# Setup SocketIO
+app.config['SECRET_KEY'] = 'secret!'
+socketio = SocketIO(app)
 
 # Insert memes if they don't exist
 if mongo.db.memes.count_documents({}) == 0:
@@ -201,7 +206,7 @@ def create_conversation():
     # Insert into DB
     req_conversation = request.json['conversation']
 
-    conversation = Coversation(id=None,
+    conversation = Conversation(id=None,
                                 user_a_id=ObjectId(req_conversation['user_a_id']),
                                 user_b_id=ObjectId(req_conversation['user_b_id']))
 
@@ -211,9 +216,19 @@ def create_conversation():
     conversation.user_a_id = str(conversation.user_a_id)
     conversation.user_b_id = str(conversation.user_b_id)
 
+    # Make a conversation analysis model for this conversation
+    conversation_analysis = ConversationAnalysis(id=None,
+                                                 conversation_id=ObjectId(conversation.id),
+                                                 sentiment=0,
+                                                 sentiment_n=0,
+                                                 text_to_analyse_a="",
+                                                 text_to_analyse_b="")
+
+    mongo.db.conversation_analysis.insert(conversation_analysis.to_dict())
+
     # Notify via Socket
     for user_id in [conversation.user_a_id, conversation.user_b_id]:
-        SocketIO.emit("/users/{}/new_conversations".format(user_id),
+        socketio.emit("/users/{}/new_conversations".format(user_id),
                       { 'conversation': conversation.to_dict() },
                       broadcast=True)
 
@@ -232,14 +247,49 @@ def send_message(conversation_id):
                       time=req_message['time'],
                       text=req_message['text'])
 
-    message_id = mongo.db.messages.insert(message)
+    message_id = mongo.db.messages.insert(message.to_dict())
     message.id = str(message_id)
     message.sending_user_id = str(message.sending_user_id)
 
+    # Track in conversation analysis model
+    # ... Get conversation model
+    db_conversation = mongo.db.conversations.find_one({ '_id': ObjectId(conversation_id) })
+
+    conversation = Conversation.from_db_document(db_conversation)
+
+    # ... Determine if user who sent message is user_a or user_b
+    user_key = 'a'
+
+    if str(conversation.user_b_id) == message.sending_user_id:
+        user_key = 'b'
+
+    # ... Accumulate sent text in conversation analysis model
+    db_conversation_analysis = mongo.db.conversation_analysis.find_one({
+        'conversation_id': ObjectId(conversation_id)
+    })
+
+    conversation_analysis = ConversationAnalysis.from_db_document(db_conversation_analysis)
+
+    current_text = conversation_analysis.to_dict()["text_to_analyse_{}".format(user_key)]
+    current_text += " {}".format(message.text)
+
+    if user_key == 'a':
+        conversation_analysis.text_to_analyse_a = current_text
+    else:
+        conversation_analysis.text_to_analyse_b = current_text
+
+    # ... Save conversation analysis model
+    mongo.db.conversation_analysis.update({ '_id': conversation_analysis.id },
+                                          conversation_analysis.to_dict())
+
     # Notify via websocket
-    SocketIO.emit("/conversations/{}/new_message".format(conversation_id),
+    socketio.emit("/conversations/{}/new_message".format(conversation_id),
                   { 'message': message.to_dict() },
                   broadcast=True)
+
+    return jsonify({
+        'message': message.to_dict()
+        })
 
 @app.route("/api/conversations/<conversation_id>/messages", methods=['GET'])
 def get_messages(conversation_id):

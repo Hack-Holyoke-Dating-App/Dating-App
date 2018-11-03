@@ -3,3 +3,4 @@ flask-pymongo
 flask_socketio
 
 google-cloud-language
+eventlet

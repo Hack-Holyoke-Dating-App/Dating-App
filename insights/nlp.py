@@ -3,8 +3,29 @@ from google.cloud import language
 from google.cloud.language import enums
 from google.cloud.language import types
 
-#Test file
-file = u'When can a center relax with the justifiable vocal? '
+from bson.objectid import ObjectId
+
+from models.conversation_analysis import ConversationAnalysis
+
+class TextAnalysis:
+    client = language.LanguageServiceClient()
+    mongo = None
+
+    def __init__(self, mongo):
+        self.mongo = mongo
+
+    def analyse(self, conversation_id):
+        # Get conversation analysis model
+        db_conversation_analysis = mongo.db.conversation_analysis.find_one({
+            'conversation_id': ObjectId(conversation_id)
+        })
+
+        conversation_analysis = ConversationAnalysis.from_db_document(db_conversation_analysis)
+
+        # Setup the GAPI NLP request
+        document = types.Document(
+            content=TBD,
+            type=enums.Document.Type.PLAIN_TEXT)
 
 
 def analysis(conversation):
