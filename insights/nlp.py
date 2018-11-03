@@ -39,14 +39,6 @@ class TextAnalysis:
         user_b_topics = User_Topics.from_db_document(db_user_b_topics)
 
         # Setup the GAPI NLP request
-        # ... Make one for entire conversation
-        both_text = "{} {}".format(conversation_analysis.text_to_analyse_a,
-                                   conversation_analysis.text_to_analyse_b)
-
-        document_both = types.Document(
-            content=both_text,
-            type=enums.Document.Type.PLAIN_TEXT)
-
         # ... Make one request for user a's text
         document_a = types.Document(
             content=conversation_analysis.text_to_analyse_a,
@@ -57,12 +49,13 @@ class TextAnalysis:
             content=conversation_analysis.text_to_analyse_b,
             type=enums.Document.Type.PLAIN_TEXT)
 
-        # Make sentiment call
-        sentiment = self.make_sentiment_call(document_both)
+        # Make sentiment calls
+        sentiment_a = self.make_sentiment_call(document_a)
+        sentiment_b = self.make_sentiment_call(document_b)
 
         # Update conversation analysis sentiment
-        conversation_analysis.sentiment = sentiment.score * sentiment.magnitude
-        #conversation_analysis.sentiment_n += 1
+        conversation_analysis.sentiment_a = sentiment_a.score * sentiment_a.magnitude
+        conversation_analysis.sentiment_b = sentiment_b.score * sentiment_b.magnitude
 
         # Make categories calls
         user_a_categories = self.make_categories_call(document_a)

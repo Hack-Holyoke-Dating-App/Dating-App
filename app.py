@@ -56,10 +56,10 @@ if mongo.db.memes.count_documents({}) == 0:
 else:
     print("Memes already inserted")
 
-def analyse_hook(conversation_id):
+def analyse_hook(conversation_id, last_message_sender_id):
     # Analyse conversation
     text_analysis.analyse(conversation_id)
-    hard_coded_analysis.analyse(conversation_id)
+    hard_coded_analysis.analyse(conversation_id, last_message_sender_id)
 
 @app.route("/api/users", methods=['POST'])
 def create_user():
@@ -256,10 +256,11 @@ def create_conversation():
     # Make a conversation analysis model for this conversation
     conversation_analysis = ConversationAnalysis(id=None,
                                                  conversation_id=ObjectId(conversation.id),
-                                                 sentiment=0,
-                                                 sentiment_n=0,
+                                                 sentiment_a=0,
+                                                 sentiment_b=0,
                                                  text_to_analyse_a="",
-                                                 text_to_analyse_b="")
+                                                 text_to_analyse_b="",
+                                                 sent_insights=[])
 
     mongo.db.conversation_analysis.insert(conversation_analysis.to_dict())
 
@@ -339,7 +340,7 @@ def send_message(conversation_id):
                                           conversation_analysis.to_dict())
 
     # Analyse conversation
-    analyse_hook(conversation_id)
+    analyse_hook(conversation_id, message.sending_user_id)
 
     # Notify via websocket
     socketio.emit("/conversations/{}/new_message".format(conversation_id),
