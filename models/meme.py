@@ -4,6 +4,6 @@ class Meme:
         
     def to_dict(self):
         return {
-                'id' : self.id
+                '_id' : self.id
                 }
         

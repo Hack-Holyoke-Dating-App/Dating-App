@@ -7,7 +7,7 @@ class User_Topic:
         
     def to_dict(self):
         return {
-                'id' : self.id,
+                '_id' : self.id,
                 'user_id' : self.user_id,
                 'topic' : self.topic,
                 'frequency' : self.frequency
