@@ -1,4 +1,5 @@
 import os
+import operator
 
 from flask import Flask, request, jsonify
 from flask_pymongo import PyMongo
@@ -63,6 +64,100 @@ def get_user(user_id):
 
     return jsonify({
         'user': user.to_dict()
+    })
+
+@app.route("/api/users/<user_id>/matches", methods=['GET'])
+def get_matches(user_id):
+    # Get meme ids so order of meme vectors is always the same
+    db_memes = mongo.db.memes.find({})
+
+    memes = []
+
+    for db_meme in db_memes:
+        meme = Meme(id=db_meme['_id'],
+                    image_path=db_meme['image_path'])
+        memes.append(meme)
+
+    # See if more than 2 users
+    if mongo.db.users.count_documents({}) < 2:
+        return jsonify({
+            'users': []
+        })
+
+    # Get all users
+    db_users = mongo.db.users.find({})
+
+    users = {}
+
+    for db_user in db_users:
+        user = User(id=db_user['_id'],
+                    username=db_user['username'],
+                    name=db_user['name'],
+                    profile_picture_path=db_user['profile_picture_path'],
+                    age=db_user['age'],
+                    location=db_user['location'])
+        users[str(user.id)] = user
+
+    meme_vectors = {}
+
+    # Make a meme rating vector each user
+    for this_user_id in list(users):
+        user = users[this_user_id]
+
+        meme_vector = []
+
+        # Get meme rating for each meme for user
+        for meme in memes:
+            # Find meme rating for user 
+            meme_rating = mongo.db.meme_ratings.find_one({
+                'user_id': user.id,
+                'meme_id': meme.id
+            })
+
+            if meme_rating is None:
+                meme_vector.append(0)
+            else:
+                val = 0
+
+                if meme_rating['liked']:
+                    val = 1
+
+                meme_vector.append(val)
+
+        meme_vectors[str(user.id)] = meme_vector
+
+    # Find the difference between each user and requesting user
+    meme_differences = {}
+
+    for other_user_id in meme_vectors:
+        # Don't compute difference for requesting user
+        if user_id == other_user_id:
+            continue
+
+        # Otherwise compute difference
+        similar_total = 0
+        for this_user_meme_vector_slot in meme_vectors[user_id]:
+            for other_user_meme_vector_slot in meme_vectors[other_user_id]:
+                if this_user_meme_vector_slot == other_user_meme_vector_slot:
+                    similar_total += 1
+
+        meme_differences[other_user_id] = similar_total
+
+    sorted_meme_differences = sorted(meme_differences.items(), key=operator.itemgetter(1))
+
+    matched_users = []
+
+    for tup in sorted_meme_differences:
+        tup_user_id = tup[0]
+
+        user = users[tup_user_id]
+        user.id = str(user.id)
+
+        matched_users.append(user.to_dict())
+
+
+    return jsonify({
+        'users': matched_users
     })
 
 

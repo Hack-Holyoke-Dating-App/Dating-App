@@ -18,5 +18,5 @@ class User:
 
         if self.id:
             d['_id'] = self.id
-            
+
         return d
