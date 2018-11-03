@@ -12,5 +12,4 @@ def hello_word():
 
 @app.route("/user/<rina>")
 def show_user_profile(rina):
-    print("Hi there")
     return 'User %s' % rina
