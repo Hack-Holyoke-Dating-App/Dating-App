@@ -2,8 +2,9 @@ import os
 import operator
 
 from flask import Flask, request, jsonify, send_from_directory
-from flask_pymongo import PyMongo
+from flask_pymongo import PyMongo, ASCENDING
 from flask_socketio import SocketIO
+from flask_cors import CORS
 
 from bson.objectid import ObjectId
 
@@ -11,7 +12,11 @@ from models.user import User
 from models.meme import Meme
 from models.message import Message
 from models.meme_rating import Meme_Rating
-from models.conversation import Coversation
+from models.conversation import Conversation
+from models.conversation_analysis import ConversationAnalysis
+from models.user_topics import User_Topics
+
+from insights.nlp import TextAnalysis
 
 import libmemes
 
@@ -20,8 +25,22 @@ app = Flask(__name__)
 # Load configuration
 app.config['MONGO_URI'] = os.environ['MONGO_URI']
 
+# Setup CORS
+cors = CORS(app, resources={
+    r"*": {
+        "origins": "*"
+    }
+})
+
 # Setup MongoDB
 mongo = PyMongo(app)
+
+# Setup SocketIO
+app.config['SECRET_KEY'] = 'secret!'
+socketio = SocketIO(app)
+
+# Setup text analysis
+text_analysis = TextAnalysis(mongo)
 
 # Insert memes if they don't exist
 if mongo.db.memes.count_documents({}) == 0:
@@ -30,11 +49,14 @@ if mongo.db.memes.count_documents({}) == 0:
     for meme_model in meme_models:
         mongo.db.memes.insert(meme_model.to_dict())
         print("Inserted meme: {}".format(meme_model.image_path))
+
+    print("Finished inserting memes")
 else:
     print("Memes already inserted")
 
 @app.route("/api/users", methods=['POST'])
 def create_user():
+    # Save into db
     req_user = request.json['user']
 
     user = User(id=None,
@@ -44,9 +66,20 @@ def create_user():
                 age=req_user['age'],
                 location=req_user['location'])
 
-    user_id = mongo.db.users.insert(user.to_dict())
+    # Check user with username isn't registered
+    if mongo.db.users.count_documents({ 'username': user.username }) > 0:
+        return jsonify({
+            'error': "Username {} is already taken".format(user.username)
+        }), 401
 
+    user_id = mongo.db.users.insert(user.to_dict())
     user.id = str(user_id)
+
+    # Create a user topics for user
+    user_topics = User_Topics(id=None,
+                              user_id=ObjectId(user_id),
+                              topics=[])
+    mongo.db.user_topics.insert(user_topics.to_dict())
 
     return jsonify({
         'user': user.to_dict()
@@ -61,8 +94,7 @@ def get_user(user_id):
                 name=db_user['name'],
                 profile_picture_path=db_user['profile_picture_path'],
                 age = db_user['age'],
-                location = db_user['location']
-                )
+                location = db_user['location'])
 
     return jsonify({
         'user': user.to_dict()
@@ -201,7 +233,7 @@ def create_conversation():
     # Insert into DB
     req_conversation = request.json['conversation']
 
-    conversation = Coversation(id=None,
+    conversation = Conversation(id=None,
                                 user_a_id=ObjectId(req_conversation['user_a_id']),
                                 user_b_id=ObjectId(req_conversation['user_b_id']))
 
@@ -211,9 +243,19 @@ def create_conversation():
     conversation.user_a_id = str(conversation.user_a_id)
     conversation.user_b_id = str(conversation.user_b_id)
 
+    # Make a conversation analysis model for this conversation
+    conversation_analysis = ConversationAnalysis(id=None,
+                                                 conversation_id=ObjectId(conversation.id),
+                                                 sentiment=0,
+                                                 sentiment_n=0,
+                                                 text_to_analyse_a="",
+                                                 text_to_analyse_b="")
+
+    mongo.db.conversation_analysis.insert(conversation_analysis.to_dict())
+
     # Notify via Socket
     for user_id in [conversation.user_a_id, conversation.user_b_id]:
-        SocketIO.emit("/users/{}/new_conversations".format(user_id),
+        socketio.emit("/users/{}/new_conversations".format(user_id),
                       { 'conversation': conversation.to_dict() },
                       broadcast=True)
 
@@ -227,25 +269,64 @@ def send_message(conversation_id):
     req_message = request.json['message']
 
     message = Message(id=None,
-                      conversation_id=conversation_id,
-                      sending_user_id=req_message['sending_user_id'],
+                      conversation_id=ObjectId(conversation_id),
+                      sending_user_id=ObjectId(req_message['sending_user_id']),
                       time=req_message['time'],
                       text=req_message['text'])
 
-    message_id = mongo.db.messages.insert(message)
+    message_id = mongo.db.messages.insert(message.to_dict())
     message.id = str(message_id)
+    message.conversation_id = str(message.conversation_id)
     message.sending_user_id = str(message.sending_user_id)
 
+    # Track in conversation analysis model
+    # ... Get conversation model
+    db_conversation = mongo.db.conversations.find_one({ '_id': ObjectId(conversation_id) })
+
+    conversation = Conversation.from_db_document(db_conversation)
+
+    # ... Determine if user who sent message is user_a or user_b
+    user_key = 'a'
+
+    if str(conversation.user_b_id) == message.sending_user_id:
+        user_key = 'b'
+
+    # ... Accumulate sent text in conversation analysis model
+    db_conversation_analysis = mongo.db.conversation_analysis.find_one({
+        'conversation_id': ObjectId(conversation_id)
+    })
+
+    conversation_analysis = ConversationAnalysis.from_db_document(db_conversation_analysis)
+
+    current_text = conversation_analysis.to_dict()["text_to_analyse_{}".format(user_key)]
+    current_text += " {}".format(message.text)
+
+    if user_key == 'a':
+        conversation_analysis.text_to_analyse_a = current_text
+    else:
+        conversation_analysis.text_to_analyse_b = current_text
+
+    # ... Save conversation analysis model
+    mongo.db.conversation_analysis.update({ '_id': conversation_analysis.id },
+                                          conversation_analysis.to_dict())
+
+    # Analyse conversation
+    text_analysis.analyse(conversation_id)
+
     # Notify via websocket
-    SocketIO.emit("/conversations/{}/new_message".format(conversation_id),
+    socketio.emit("/conversations/{}/new_message".format(conversation_id),
                   { 'message': message.to_dict() },
                   broadcast=True)
+
+    return jsonify({
+        'message': message.to_dict()
+        })
 
 @app.route("/api/conversations/<conversation_id>/messages", methods=['GET'])
 def get_messages(conversation_id):
     db_messages = mongo.db.messages.find({
         'conversation_id': ObjectId(conversation_id)
-    }).sort('time', PyMongo.ASCENDING)
+    }).sort('time', ASCENDING)
 
     all_messages = []
 
