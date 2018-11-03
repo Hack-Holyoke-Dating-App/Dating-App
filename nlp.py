@@ -4,27 +4,28 @@ from google.cloud.language import enums
 from google.cloud.language import types
 
 #Test file
-file = u'When can a center relax with the justifiable vocal? When can a center relax with the justifiable vocal? When can a center relax with the justifiable vocal? When can a center relax with the justifiable vocal? When can a center relax with the justifiable vocal? When can a center relax with the justifiable vocal?When can a center relax with the justifiable vocal? Why can\'t the league learn the crossroad? The audio dreads an undone aspect. Will a crown see the definitive specimen? Each fool reminder pats the potential company. Opposite the identical species jams a probable spy.'
+file = u'When can a center relax with the justifiable vocal? '
 
 
 def analysis(conversation):
-    client = language.LanguageServiceClient()
-    document = types.Document(
-        content=conversation,
-        type=enums.Document.Type.PLAIN_TEXT)
-    sentiment = client.analyze_sentiment(document=document).document_sentiment
-    categories = client.classify_text(document).categories
-    entities = client.analyze_entities(document).entities
-    return sentiment, entities, categories
+    try:
+        client = language.LanguageServiceClient()
+        document = types.Document(
+            content=conversation,
+            type=enums.Document.Type.PLAIN_TEXT)
+        sentiment = client.analyze_sentiment(document=document).document_sentiment
+        categories = client.classify_text(document).categories
+        #entities = client.analyze_entities(document).entities
+    except:
+        return
 
-
-def print_results(sentiment, entities, categories):
-    print(sentiment.score, sentiment.magnitude)
+    chat = create_conversation()
+    chat['score'], chat['magnitude'] = sentiment.score, sentiment.magnitude
 
     #entity_type = {'UNKNOWN', 'PERSON', 'LOCATION', 'ORGANIZATION',
      #              'EVENT', 'WORK_OF_ART', 'CONSUMER_GOOD', 'OTHER'}
 
-    for entity in entities:
+    """for entity in entities:
         print('=' * 20)
         print(u'{:<16}: {}'.format('name', entity.name))
         #print(u'{:<16}: {}'.format('type', entity_type[entity.type]))
@@ -37,9 +38,39 @@ def print_results(sentiment, entities, categories):
         print(u'=' * 20)
         print(u'{:<16}: {}'.format('name', category.name))
         print(u'{:<16}: {}'.format('confidence', category.confidence))
+"""
+    for category in categories:
+        chat['categories'] += category.name
+    return success
 
-sentiment, entities, categories = analysis(file)
-print_results(sentiment, entities, categories)
+
+def get_message_accumulator():
+    #Get message
+    return file
+
+
+def concatenate_message(file):
+    #Add previous
+    file += get_message_accumulator()
+    return file
+
+
+def create_conversation():
+    conversation = {
+        'score': 0,
+        'magnitude': 0,
+        'categories': '',
+    }
+    return conversation
+
+
+while analysis(file) == 0:
+    file = concatenate_message(file)
+
+for x in chat:
+    print(x)
+
+
 
 
 

@@ -1,3 +1,7 @@
 # Python build
 *.pyc
 __pycache__
+
+# Jetbrains
+*.iml
+.idea/
