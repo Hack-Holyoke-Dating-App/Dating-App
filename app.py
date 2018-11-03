@@ -1,7 +1,7 @@
 import os
 import operator
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_pymongo import PyMongo, ASCENDING
 from flask_socketio import SocketIO
 from flask_cors import CORS
@@ -346,3 +346,14 @@ def get_messages(conversation_id):
     return jsonify({
         'messages': all_messages
     })
+
+@app.route("/dir/<path:path>", methods=['GET'])
+def get_static_file(path):
+    
+    static_file_directory = os.path.join(os.path.dirname(os.path.realpath(__file__)))
+    
+    # if file doesn't exist
+    if not os.path.isfile(os.path.join(static_file_directory, path)):
+        path = os.path.join(path, None)
+        
+    return send_from_directory(static_file_directory, path)
