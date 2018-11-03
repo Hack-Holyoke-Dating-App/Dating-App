@@ -2,7 +2,7 @@ import os
 
 from flask import Flask, request, jsonify
 from flask_pymongo import PyMongo
-
+from bson.objectid import ObjectId
 from models.user import User
 
 app = Flask(__name__)
@@ -28,4 +28,18 @@ def create_user():
 
     user.id = str(user_id)
 
+    return jsonify(user.to_dict())
+
+@app.route("/api/users/<user_id>", methods=['GET'])
+def get_user(user_id):
+    db_user = mongo.db.users.find_one({'_id' :  ObjectId(user_id)})
+    
+    user = User(id=user_id,
+                username=db_user['username'],
+                name=db_user['name'],
+                profile_picture_path=db_user['profile_picture_path'],
+                age = db_user['age'],
+                location = db_user['location']
+                )
+    
     return jsonify(user.to_dict())

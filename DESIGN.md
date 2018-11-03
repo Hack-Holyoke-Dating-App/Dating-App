@@ -85,6 +85,8 @@ Response:
 ### Get User
 GET `/api/users/<user id>`
 
+Status: written
+
 Request: None
 
 Response:
