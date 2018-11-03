@@ -57,7 +57,7 @@ class HardCodedAnalysis:
 
         # Boring intro
         if conversation_message_count == 1:
-            db_message = mongo.db.messages.find_one(conversation_query)
+            db_message = self.mongo.db.messages.find_one(conversation_query)
             message = Message.from_db_document(db_message)
 
             if len(message.text) < 10:
@@ -69,12 +69,13 @@ class HardCodedAnalysis:
 
         # Ask them out
         if ("{}.{}".format(last_message_sender_letter, INSIGHT_DATE) not in conversation_analysis.sent_insights) and \
-                last_message_sender_sentiment >= 0.3:
+                last_message_sender_sentiment >= 0.3 and \
+                conversation_message_count > 5:
             send_insight(self.socketio,
                          conversation_id,
                          other_user_id,
                          INSIGHT_DATE,
-                         "It seams like your match is into your, try asking them out on a date!")
+                         "It seams like your match is into you, try asking them out on a date!")
 
             conversation_analysis.sent_insights.append("{}.{}".format(last_message_sender_letter, INSIGHT_DATE))
 
@@ -90,34 +91,37 @@ class HardCodedAnalysis:
                 'sending_user_id': ObjectId(other_user_id)
             })
 
-            # Compute ratios
-            last_sender_ratio = last_sender_msg_count / other_msg_count
-            other_ratio = other_msg_count / last_sender_msg_count
+            if last_sender_msg_count > 0 and other_msg_count:
 
-            # Determine if ratios are bad
-            ratio_user_ids = []
+                # Compute ratios
+                last_sender_ratio = last_sender_msg_count / other_msg_count
+                other_ratio = other_msg_count / last_sender_msg_count
 
-            if ("{}.{}".format(last_message_sender_letter, INSIGHT_RATIO) not in conversation_analysis.sent_insights) and \
-                    last_sender_ratio > 2.5:
+                # Determine if ratios are bad
+                ratio_user_ids = []
 
-                ratio_user_ids.append(ObjectId(last_message_sender_id))
+                if ("{}.{}".format(last_message_sender_letter, INSIGHT_RATIO) not in conversation_analysis.sent_insights) and \
+                        last_sender_ratio > 2.5:
 
-            if ("{}.{}".format(other_letter, INSIGHT_RATIO) not in conversation_analysis.sent_insights) and \
-                    other_ratio > 2.5:
+                    ratio_user_ids.append(ObjectId(last_message_sender_id))
 
-                ratio_user_ids.append(ObjectId(other_user_id))
+                if ("{}.{}".format(other_letter, INSIGHT_RATIO) not in conversation_analysis.sent_insights) and \
+                        other_ratio > 2.5:
 
-            # Send insights
-            for user_id in ratio_user_ids:
-                send_insight(self.socketio,
-                             conversation_id,
-                             str(user_id),
-                             INSIGHT_RATIO,
-                             "Looks like you are sending a lot of messages, try toning it down")
+                    ratio_user_ids.append(ObjectId(other_user_id))
+
+                # Send insights
+                for user_id in ratio_user_ids:
+                    send_insight(self.socketio,
+                                 conversation_id,
+                                 str(user_id),
+                                 INSIGHT_RATIO,
+                                 "Looks like you are sending a lot of messages, try toning it down")
 
         # Topic change
         if ("{}.{}".format(other_letter, INSIGHT_TOPIC)) and \
-                other_user_sentiment < -0.2:
+                other_user_sentiment < -0.2 and \
+                conversation_message_count > 5 :
 
             db_other_user_topics = self.mongo.db.user_topics.find_one({ 'user_id': ObjectId(other_user_id) })
             other_user_topics = User_Topics.from_db_document(db_other_user_topics)

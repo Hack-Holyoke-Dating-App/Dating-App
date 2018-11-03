@@ -339,13 +339,13 @@ def send_message(conversation_id):
     mongo.db.conversation_analysis.update({ '_id': conversation_analysis.id },
                                           conversation_analysis.to_dict())
 
-    # Analyse conversation
-    analyse_hook(conversation_id, message.sending_user_id)
-
     # Notify via websocket
     socketio.emit("/conversations/{}/new_message".format(conversation_id),
                   { 'message': message.to_dict() },
                   broadcast=True)
+
+    # Analyse conversation
+    analyse_hook(conversation_id, message.sending_user_id)
 
     return jsonify({
         'message': message.to_dict()
