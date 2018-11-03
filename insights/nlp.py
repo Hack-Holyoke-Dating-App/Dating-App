@@ -105,7 +105,6 @@ class TextAnalysis:
 
                 names.append(name)
 
-            print(names)
             return names
         except Exception as e:
             return None
