@@ -86,7 +86,7 @@ Response:
 ### Get User
 GET `/api/users/<user id>`
 
-Status: written
+Status: Written
 
 Request: None
 
@@ -107,6 +107,8 @@ Response:
 ## Meme Rating Endpoints
 ### Rate Meme
 POST `/api/memes/<meme id>`
+
+Status: Written
 
 Request:
 
