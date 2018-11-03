@@ -39,3 +39,18 @@ Then start the Docker container:
 ```
 # ./scripts/docker-run.bat
 ```
+
+## Command Prompt
+To start a command prompt for development:
+
+**Linux / OSX:**  
+
+```
+# ./scripts/docker-shell.sh
+```
+
+**Windows:**   
+
+```
+# ./scripts/docker-shell.bat
+```
