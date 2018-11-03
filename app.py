@@ -3,7 +3,9 @@ import os
 from flask import Flask, request, jsonify
 from flask_pymongo import PyMongo
 from bson.objectid import ObjectId
+
 from models.user import User
+from models.meme_rating import Meme_Rating
 import libmemes
 
 app = Flask(__name__)
@@ -44,7 +46,7 @@ def create_user():
 @app.route("/api/users/<user_id>", methods=['GET'])
 def get_user(user_id):
     db_user = mongo.db.users.find_one({'_id' :  ObjectId(user_id)})
-    
+
     user = User(id=user_id,
                 username=db_user['username'],
                 name=db_user['name'],
@@ -52,5 +54,20 @@ def get_user(user_id):
                 age = db_user['age'],
                 location = db_user['location']
                 )
-    
+
     return jsonify(user.to_dict())
+
+@app.route("/api/memes/<meme_id>", methods=['POST'])
+def rate_meme(meme_id):
+    req_meme_rating = request.json['meme_rating']
+
+    meme_rating = Meme_Rating(id=None,
+                              meme_id=ObjectId(meme_id),
+                              user_id=req_meme_rating['user_id'],
+                              liked=req_meme_rating['liked'])
+
+    meme_rating_id = mongo.db.meme_ratings.insert(meme_rating.to_dict())
+
+    meme_rating.id = str(meme_rating_id)
+
+    return jsonify(meme_rating.to_dict())
