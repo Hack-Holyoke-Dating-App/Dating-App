@@ -6,7 +6,7 @@ class User:
         self.profile_picture_path = profile_picture_path
         self.age = age
         self.location = location
-        
+
     def to_dict(self):
         d = {
                 'username' : self.username,
@@ -15,8 +15,8 @@ class User:
                 'age' : self.age,
                 'location' : self.location
                 }
-        
-        if (self.id) :
+
+        if self.id:
             d['_id'] = self.id
             
         return d
