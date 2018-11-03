@@ -222,4 +222,6 @@ Who Subscribes: Each user in the conversation subscribes to their own topic
 
 Payload:
 
-- `insight`: Insight, schema TBD
+- `insight`: Insight to show user about their chat, object which contains fields:
+    - `type` (String): Identifies what kind of insight is being sent
+    - `data` (String): Message to show user

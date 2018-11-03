@@ -376,13 +376,12 @@ def get_messages(conversation_id):
         'messages': all_messages
     })
 
-@app.route("/dir/<path:path>", methods=['GET'])
+@app.route("/<path:path>", methods=['GET'])
 def get_static_file(path):
-    
-    static_file_directory = os.path.join(os.path.dirname(os.path.realpath(__file__)))
-    
+    frontend_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "./frontend")
+
     # if file doesn't exist
-    if not os.path.isfile(os.path.join(static_file_directory, path)):
+    if not os.path.isfile(os.path.join(frontend_dir, path)):
         path = os.path.join(path, None)
-        
-    return send_from_directory(static_file_directory, path)
+
+    return send_from_directory(frontend_dir, path)
