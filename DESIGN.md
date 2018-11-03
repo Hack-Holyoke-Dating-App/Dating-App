@@ -7,6 +7,7 @@ Dating app design.
     - [Meme](#meme)
     - [Meme Rating](#meme-rating)
     - [Conversation](#conversation)
+    - [Conversation Analysis](#conversation-analysis)
     - [Message](#message)
     - [User Topic](#user-topic)
 - [API](#api)
@@ -52,6 +53,17 @@ Collection: `conversations`
 - `_id` (String)
 - `user_a_id` (String)
 - `user_b_id` (String)
+
+## Conversation Analysis
+Collection: `conversation_analysis`
+
+- `_id` (String)
+- `conversation_id` (String)
+- `sentiment_a` (String)
+- `sentiment_b` (String)
+- `text_to_analyse_a` (String)
+- `text_to_analyse_b` (String)
+- `sent_insights` (String[])
 
 ## Message
 Collection: `messages`
