@@ -177,6 +177,8 @@ Response:
 ### New Conversation Topic
 Topic: `/users/<user id>/new_conversations`
 
+Status: Written
+
 Description: Receives a message when a new conversation is started with the user.
 
 Who Subscribes: A single user
