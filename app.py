@@ -1,3 +1,4 @@
+#!/usr/bin/env python2
 import os
 import operator
 
@@ -403,3 +404,6 @@ def get_static_file(path):
         path = 'index.html'
 
     return send_from_directory(frontend_dir, path)
+
+if __name__ == '__main__':
+    app.run(host="0.0.0.0", port="80")
